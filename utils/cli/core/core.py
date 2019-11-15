@@ -28,6 +28,13 @@ class CLI():
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
+        url = self.api.tasks_id_status(task_id)
+        while True:
+            response = self.session.get(url)
+            response.raise_for_status()
+            log.info('STATUS {}'.format(response.status_code))
+            if response.status_code == 200:
+                break
 
     def tasks_list(self, use_json_output, **kwargs):
         """ List all tasks in either basic or JSON format. """
@@ -49,7 +56,7 @@ class CLI():
             response = self.session.get(url)
             response.raise_for_status()
 
-    def tasks_create(self, name, labels, bug, resource_type, resources, **kwargs):
+    def tasks_create(self, name, labels, bug, resource_type, resources, filename, fileformat, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         url = self.api.tasks
@@ -62,6 +69,8 @@ class CLI():
         response_json = response.json()
         log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
         self.tasks_data(response_json['id'], resource_type, resources)
+        if filename:
+            self.tasks_upload(response_json['id'], fileformat, filename)
 
     def tasks_delete(self, task_ids, **kwargs):
         """ Delete a list of tasks, ignoring those which don't exist. """
@@ -112,6 +121,22 @@ class CLI():
         with open(filename, 'wb') as fp:
             fp.write(response.content)
 
+    def tasks_upload(self, task_id, fileformat, filename, **kwargs):
+        """ Upload annotations for a task in the specified format
+        (e.g. 'YOLO ZIP 1.0')."""
+        url = self.api.tasks_id_annotations(task_id, fileformat)
+        files = {'annotation_file': open(filename, 'rb')}
+
+        response = self.session.put(url, files=files)
+        response.raise_for_status()
+
+        while True:
+            response = self.session.put(url)
+            response.raise_for_status()
+            log.info('STATUS {}'.format(response.status_code))
+            if response.status_code == 201:
+                break
+
 
 class CVAT_API_V1():
     """ Build parameterized API URLs """
@@ -132,8 +157,15 @@ class CVAT_API_V1():
     def tasks_id_data(self, task_id):
         return self.tasks_id(task_id) + '/data'
 
+    def tasks_id_status(self, task_id):
+        return self.tasks_id(task_id) + '/status'
+
     def tasks_id_frame_id(self, task_id, frame_id):
         return self.tasks_id(task_id) + '/frames/{}'.format(frame_id)
+
+    def tasks_id_annotations(self, task_id, fileformat):
+        return self.tasks_id(task_id) + '/annotations?format={}' \
+            .format(fileformat)
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations/{}?format={}' \

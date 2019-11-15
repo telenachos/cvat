@@ -113,6 +113,20 @@ task_create_parser.add_argument(
     help='bug tracker URL'
 )
 task_create_parser.add_argument(
+    '--upload',
+    dest='filename',
+    default='',
+    type=str,
+    help='annotation file'
+)
+task_create_parser.add_argument(
+    '--format',
+    dest='fileformat',
+    type=str,
+    default='CVAT XML 1.1',
+    help='annotation format (default: %(default)s)'
+)
+task_create_parser.add_argument(
     'resource_type',
     default='local',
     choices=list(ResourceType),
@@ -206,5 +220,31 @@ dump_parser.add_argument(
     dest='fileformat',
     type=str,
     default='CVAT XML 1.1 for images',
+    help='annotation format (default: %(default)s)'
+)
+
+#######################################################################
+# Upload
+#######################################################################
+
+upload_parser = task_subparser.add_parser(
+    'upload',
+    description='Upload annotations for a CVAT task.'
+)
+upload_parser.add_argument(
+    'task_id',
+    type=int,
+    help='task ID'
+)
+upload_parser.add_argument(
+    'filename',
+    type=str,
+    help='output file'
+)
+upload_parser.add_argument(
+    '--format',
+    dest='fileformat',
+    type=str,
+    default='CVAT XML 1.1',
     help='annotation format (default: %(default)s)'
 )

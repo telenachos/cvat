@@ -69,3 +69,10 @@ class TestCLI(APITestCase):
         self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT)
         self.assertTrue(os.path.exists(path))
         os.remove(path)
+
+    def test_tasks_upload(self):
+        path = os.path.join(settings.SHARE_ROOT, 'test_cli.xml')
+        self.cli.tasks_dump(1, 'CVAT XML 1.1 for images', path)
+        self.assertTrue(os.path.exists(path))
+        self.cli.tasks_upload(1, 'CVAT XML 1.1', path)
+        os.remove(path)
